@@ -1,0 +1,14 @@
+{
+    // "python.": "/workspaces/atcoder/.venv/bin/python3"
+    // "python.poetryPath": "/usr/local/py-utils/bin/poetry",
+    "python.analysis.extraPaths": [
+        "/workspaces/TailoredTasteTuner/.venv/bin/python3"
+    ],
+    "python.defaultInterpreterPath": "/workspaces/TailoredTasteTuner/.venv/bin/python3",
+    "python.terminal.activateEnvironment": false,
+    // "python.analysis.typeCheckingMode": "strict",
+    "python.linting.mypyEnabled": true,
+    "python.linting.mypyArgs": [
+        "--config-file=pyproject.toml"
+    ]
+}

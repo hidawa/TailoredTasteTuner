@@ -8,25 +8,33 @@ app = dash.Dash(
     __name__,
     use_pages=True,
     suppress_callback_exceptions=True,
-    external_stylesheets=[dbc.themes.DARKLY],
+    external_stylesheets=[dbc.themes.SANDSTONE],
 )
 server = app.server
 
 app.layout = dbc.Container(
     [
-        dbc.Row([
-            dbc.Col(sidebar, width=2),
-            dbc.Col(
-                html.Div([
-                    navbar,
-                    html.Div(page_container, className="p-4"),
-                ]),
-                width=10,
-            ),
-        ], className="g-0")
+        navbar,
+        dbc.Row(
+            [
+                dbc.Col(sidebar, width=2),
+                dbc.Col(
+                    html.Div([
+                        # navbar,
+                        html.Hr(),
+                        html.Div(
+                            page_container, 
+                            # className="p-4"
+                        ),
+                    ]),
+                    width=10,
+                ),
+            ], 
+            # className="g-0"
+        )
     ],
     fluid=True,
-    className="bg-dark text-white",
+    #className="bg-coffee",
 )
 
 if __name__ == "__main__":

@@ -13,5 +13,7 @@
     ],
     "mypy-type-checker.args": [
              "--config-file=pyproject.toml"
-    ]
+    ],
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter"
 }

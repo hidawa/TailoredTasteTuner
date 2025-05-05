@@ -204,6 +204,18 @@ dash = ">=3.0.3"
 pandas = ["numpy (>=2.0.2)", "pandas (>=2.2.3)"]
 
 [[package]]
+name = "dash-chart-editor"
+version = "0.0.1a5"
+description = "Dash wrapper for Plotly's react-chart-editor"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "dash_chart_editor-0.0.1a5-py3-none-any.whl", hash = "sha256:cad60e37541a185fb135f0ea848bfc3a7547c54388d82d386670842646948d24"},
+    {file = "dash_chart_editor-0.0.1a5.tar.gz", hash = "sha256:0f9db19afa8212e89443350f3f623f0d4d7caef7d417ae564d6336fad2ec101d"},
+]
+
+[[package]]
 name = "flask"
 version = "3.0.3"
 description = "A simple framework for building complex web applications."
@@ -575,4 +587,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "0977b7b521631b6bb5aa70c93dedb3afebca56c465caf0d5e57a9a4083a714b9"
+content-hash = "59d3f7cf59cc4114e48853bdbb0a44bbd789b160f6b2dc5fc0069d291e96faee"

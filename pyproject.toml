@@ -10,7 +10,12 @@ requires-python = ">=3.12"
 dependencies = [
     "dash (>=3.0.4,<4.0.0)",
     "dash-bootstrap-components (>=2.0.2,<3.0.0)",
-    "dash-chart-editor (>=0.0.1a5,<0.0.2)"
+    "dash-chart-editor (>=0.0.1a5,<0.0.2)",
+    "optuna (>=4.3.0,<5.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "pandas-stubs (>=2.2.3.250308,<3.0.0.0)",
+    "botorch (>=0.13.0,<0.14.0)",
+    "optuna-integration (>=4.3.0,<5.0.0)"
 ]
 
 
@@ -21,12 +26,17 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry]
 name = "tailoredtastetuner"
 version = "0.1.0"
-packages = [{ include = "src" }]
-
-[tool.mypy]
-check_untyped_defs = true
-disallow_untyped_defs = true
+packages = [{ include = "src"}]
 
 [[tool.mypy.overrides]]
-module = "dash_bootstrap_components.*"
+module = [
+"dash_bootstrap_components.*", 
+"pandas.*", 
+"optuna.*", 
+"dash_chart_editor.*",
+"botorch.*",
+"optuna_integration.*",
+"gpytorch.*",
+"plotly.*",
+]
 ignore_missing_imports = true

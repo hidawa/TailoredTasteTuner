@@ -4,11 +4,13 @@ import dash_bootstrap_components as dbc
 from src.navbar import navbar
 from src.sidebar import sidebar
 
+
 app = dash.Dash(
     __name__,
     use_pages=True,
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.SANDSTONE],
+    external_scripts=["https://cdn.plot.ly/plotly-2.18.2.min.js"]
 )
 server = app.server
 
@@ -23,18 +25,18 @@ app.layout = dbc.Container(
                         # navbar,
                         html.Hr(),
                         html.Div(
-                            page_container, 
+                            page_container,
                             # className="p-4"
                         ),
                     ]),
                     width=10,
                 ),
-            ], 
+            ],
             # className="g-0"
-        )
+        ),
     ],
     fluid=True,
-    #className="bg-coffee",
+    # className="bg-coffee",
 )
 
 if __name__ == "__main__":

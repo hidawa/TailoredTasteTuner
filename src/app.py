@@ -10,7 +10,7 @@ app = dash.Dash(
     use_pages=True,
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.SANDSTONE],
-    external_scripts=["https://cdn.plot.ly/plotly-2.18.2.min.js"]
+    # external_scripts=["https://cdn.plot.ly/plotly-2.18.2.min.js"]
 )
 server = app.server
 

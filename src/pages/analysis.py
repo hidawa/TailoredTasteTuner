@@ -4,7 +4,7 @@ from dash import html, register_page, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
-register_page(__name__, path="/results")  # type: ignore
+register_page(__name__, path="/analysis")  # type: ignore
 
 df_grid = pd.read_csv(
     # 'https://raw.githubusercontent.com/plotly/datasets/master/solar.csv'

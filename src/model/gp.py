@@ -5,16 +5,17 @@ from botorch.models import SingleTaskGP
 from botorch.models.transforms.outcome import Standardize
 from botorch.fit import fit_gpytorch_mll
 from botorch.utils.transforms import normalize
-from botorch.utils.transforms import unnormalize
 from gpytorch.mlls import ExactMarginalLogLikelihood
 import pandas as pd
 import plotly.graph_objects as go
 import itertools
 
+from botorch.acquisition import qExpectedImprovement
+from botorch.optim import optimize_acqf
+
 # %%
 # デバイス設定（必要に応じて）
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# device = torch.device("cpu")
 
 # トレーニングデータ
 df = pd.read_csv(
@@ -41,23 +42,31 @@ mll = ExactMarginalLogLikelihood(model.likelihood, model).to(device)
 fit_gpytorch_mll(mll)
 
 # %%
+best_f = model.outcome_transform(Y_train.to(device))[0].max()
+EI = qExpectedImprovement(model=model, best_f=best_f)
 
-# # === 可視化軸設定 ===
-# x_i_idx = 0  # ケニア_ml
-# x_j_idx = 2  # コスタリカ_ml
+# %%
+candidates, acq_value = optimize_acqf(
+    EI,
+    bounds=bounds,
+    q=5,
+    num_restarts=10,
+    raw_samples=100,
+    post_processing_func=lambda x: x / x.sum(dim=-1, keepdim=True),
+)
 
-# x_i_vals = torch.linspace(0, 50, 21)
-# x_j_vals = torch.linspace(0, 50, 21)
-# x_i_grid, x_j_grid = torch.meshgrid(x_i_vals, x_j_vals, indexing='ij')
+# %%
+posterior = model.posterior(candidates)  # q x 1 x d -> q x 1 の正規分布
 
-# # ベース入力（他の変数は平均固定）
-# base_input = X_train.median(dim=0).values.cpu()
-# inputs = base_input.repeat(x_i_grid.numel(), 1)
-# inputs[:, x_i_idx] = x_i_grid.flatten()
-# inputs[:, x_j_idx] = x_j_grid.flatten()
+# 予測平均と分散を取得
+mean = posterior.mean.squeeze(-1)        # shape: [q, 1] -> [q]
+variance = posterior.variance.squeeze(-1)  # shape: [q, 1] -> [q]
 
-# # inputs（予測用グリッド）も同じ bounds で正規化
-# inputs_norm = normalize(inputs.to(device), bounds)
+print("候補点ごとの予測平均:")
+print(mean.cpu().detach().numpy())
+
+print("候補点ごとの予測分散:")
+print(variance.cpu().detach().numpy())
 
 # %%
 
@@ -79,8 +88,6 @@ X_grid_norm = normalize(X_grid, bounds)
 model.eval()
 posterior = model.posterior(X_grid_norm.to(device))
 mean = posterior.mean.detach().cpu().squeeze().numpy()
-# lower, upper = posterior.mvn.confidence_region()
-# .sqrt().view(x_i_grid.shape).detach().cpu().numpy()
 std = posterior.variance.sqrt().detach().cpu().squeeze().numpy()
 
 upper = mean + 1.645 * std
@@ -92,8 +99,6 @@ df_grid["lower"] = lower
 df_grid["std"] = std
 df_grid
 
-# %%
-bounds
 # %%
 
 # === Plotly描画 ===
@@ -119,9 +124,6 @@ def reshape_surface(x_i_col_name, x_j_col_name, z_col_name):
 
 
 reshape_surface(x_i_col_name, x_j_col_name, "mean")
-
-# %%
-df_plot
 
 # %%
 
@@ -217,12 +219,6 @@ fig.write_html(
     full_html=True,
     auto_open=True
 )
-
-# %%
-bounds
-
-# %%
-df_grid
 
 # %%
 df_grid.to_csv(

@@ -101,18 +101,18 @@ def objective(trial):
 
 if __name__ == "__main__":
 
-    sampler1 = optuna.integration.BoTorchSampler(
-        candidates_func=default_candidates_func)
-    study1 = optuna.create_study(sampler=sampler1)
-    study1.optimize(objective, n_trials=50)
+    # sampler1 = optuna.integration.BoTorchSampler(
+    #     candidates_func=default_candidates_func)
+    # study1 = optuna.create_study(sampler=sampler1)
+    # study1.optimize(objective, n_trials=50)
 
     sampler2 = optuna.integration.BoTorchSampler(
         candidates_func=customized_candidates_func)
     study2 = optuna.create_study(sampler=sampler2)
     study2.optimize(objective, n_trials=50)
 
-    print(
-        f"Study1's best value: {study1.best_value} (params: {study1.best_params})")
+    # print(
+    #     f"Study1's best value: {study1.best_value} (params: {study1.best_params})")
     print(
         f"Study2's best value: {study2.best_value} (params: {study2.best_params})")
 

@@ -15,7 +15,9 @@ dependencies = [
     "pandas (>=2.2.3,<3.0.0)",
     "pandas-stubs (>=2.2.3.250308,<3.0.0.0)",
     "botorch (>=0.13.0,<0.14.0)",
-    "optuna-integration (>=4.3.0,<5.0.0)"
+    "optuna-integration (>=4.3.0,<5.0.0)",
+    "dash-ag-grid (>=31.3.1,<32.0.0)",
+    "pydantic (>=2.11.5,<3.0.0)"
 ]
 
 
@@ -31,6 +33,7 @@ packages = [{ include = "src"}]
 [[tool.mypy.overrides]]
 module = [
 "dash_bootstrap_components.*", 
+"dash_ag_grid.*",
 "pandas.*", 
 "optuna.*", 
 "dash_chart_editor.*",

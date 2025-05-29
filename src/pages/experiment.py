@@ -1,9 +1,24 @@
 from dash import html, dcc, register_page, Input, Output, callback  # noqa: F401
 import dash_bootstrap_components as dbc
-# from src.app import app
+import dash_ag_grid as dag
 from typing import Union
+import pandas as pd
+from src.model.return_candidates import CreateCandidates, CandidatesRequest
 
 register_page(__name__, path="/experiment")
+
+df = pd.read_csv(
+    "./data/input_test.csv",
+)
+
+grid = dag.AgGrid(
+    id="grid-callback-candidates",
+    columnDefs=[{"field": x, } for x in df.columns],
+    rowData=[],
+)
+
+del df
+
 
 layout = html.Div([
     html.H2(
@@ -34,11 +49,12 @@ def update_tab_content(active_tab: str) -> Union[html.Div, None]:
                 "☕ ブレンド作成",
                 # className="text-light"
             ),
-            html.P(
-                "ここでコーヒー豆の配合やミルクの量を設定します。",
-                # className="text-secondary"
+            html.Button(
+                "新しいブレンドを作成",
+                id="create-blend-button",
+                className="btn btn-primary mb-3"
             ),
-            # フォーム・スライダー等配置予定
+            grid,
         ])
     elif active_tab == "tab-eval":
         return html.Div([
@@ -53,3 +69,37 @@ def update_tab_content(active_tab: str) -> Union[html.Div, None]:
             # 入力フォーム等配置予定
         ])
     return html.Div()
+
+
+@callback(
+    Output("grid-callback-candidates", "rowData", allow_duplicate=True),
+    Input("create-blend-button", "n_clicks"),
+    prevent_initial_call=True
+)
+def create_blend(n_clicks: int) -> Union[list, None]:
+    if n_clicks is None:
+        return [
+        ]
+
+    df = pd.read_csv(
+        "./data/input_test.csv",
+    )
+    request_data = CandidatesRequest(
+        X_train=df.drop(columns=["美味しさ"]),
+        Y_train=df[["美味しさ"]],
+        num_candidates=3,
+        bounds=None
+    )
+
+    create_candidates = CreateCandidates()
+    response = create_candidates(request_data)
+    df_output = pd.concat(
+        [
+            response.candidates,
+            response.predictions
+        ],
+        axis=1
+    )
+    new_blend_data = df_output.to_dict("records")
+
+    return new_blend_data

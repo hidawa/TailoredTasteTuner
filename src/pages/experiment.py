@@ -8,12 +8,26 @@ from src.model.return_candidates import CreateCandidates, CandidatesRequest
 register_page(__name__, path="/experiment")
 
 df = pd.read_csv(
-    "./data/input_test.csv",
+    "../data/input_test.csv",
 )
 
 grid = dag.AgGrid(
     id="grid-callback-candidates",
-    columnDefs=[{"field": x, } for x in df.columns],
+    dashGridOptions={
+        "rowSelection": "multiple",
+        "suppressRowClickSelection": True,
+        "animateRows": False
+    },
+    columnDefs=[
+        {"field": x, } for x in df.columns
+    ] + [
+        {
+            "headerName": "試してみる",   # チェックボックスの列
+            "checkboxSelection": True,
+            "headerCheckboxSelection": True,
+            # "width": 50
+        }
+    ],
     rowData=[],
 )
 
@@ -50,11 +64,16 @@ def update_tab_content(active_tab: str) -> Union[html.Div, None]:
                 # className="text-light"
             ),
             html.Button(
-                "新しいブレンドを作成",
+                "おすすめブレンドを計算",
                 id="create-blend-button",
                 className="btn btn-primary mb-3"
             ),
-            grid,
+            dcc.Loading(grid),
+            html.Button(
+                "チェックしたブレンドを保存",
+                id="save-blend-button",
+                # className="btn btn-primary mb-3"
+            ),
         ])
     elif active_tab == "tab-eval":
         return html.Div([
@@ -82,7 +101,7 @@ def create_blend(n_clicks: int) -> Union[list, None]:
         ]
 
     df = pd.read_csv(
-        "./data/input_test.csv",
+        "../data/input_test.csv",
     )
     request_data = CandidatesRequest(
         X_train=df.drop(columns=["美味しさ"]),

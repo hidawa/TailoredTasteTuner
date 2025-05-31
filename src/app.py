@@ -3,6 +3,7 @@ from dash import html, page_container
 import dash_bootstrap_components as dbc
 from src.navbar import navbar
 from src.sidebar import sidebar
+import os
 
 
 app = dash.Dash(
@@ -40,4 +41,5 @@ app.layout = dbc.Container(
 )
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    # port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=8080, debug=False)

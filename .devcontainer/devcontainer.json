@@ -21,7 +21,8 @@
 		"username": "vscode",
 		"userUid": "automatic",
 		"userGid": "automatic"
-		}
+		},
+		"ghcr.io/dhoeric/features/google-cloud-cli:1": {}
 	},
 
 	// Features to add to the dev container. More info: https://containers.dev/features.

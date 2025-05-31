@@ -7,12 +7,10 @@ import plotly.graph_objects as go
 register_page(__name__, path="/analysis")  # type: ignore
 
 df_grid = pd.read_csv(
-    # 'https://raw.githubusercontent.com/plotly/datasets/master/solar.csv'
-    "./data/grid_predict.csv"
+    "../data/grid_predict.csv"
 )
 df_actual = pd.read_csv(
-    # 'https://raw.githubusercontent.com/plotly/datasets/master/solar.csv'
-    "./data/input_test.csv"
+    "../data/input_test.csv"
 )
 actual_col = "美味しさ"
 
@@ -118,10 +116,6 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
     y_vals = np.sort(df_plot[x_j_col].unique())
     x_mesh, y_mesh = np.meshgrid(x_vals, y_vals, indexing='ij')
 
-    print(x_i_col)
-    print(x_mesh)
-    print(reshape_surface(df_plot, x_i_col, x_j_col, "mean"))
-    print(slider_ranges)
     fig = go.Figure()
     # GP平均
     fig.add_trace(go.Surface(

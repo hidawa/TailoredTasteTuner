@@ -111,7 +111,7 @@ class CreateCandidates:
 if __name__ == "__main__":
     # テスト用のリクエストデータ
     df = pd.read_csv(
-        "./data/input_test.csv"
+        "../data/input_test.csv"
     )
     request_data = CandidatesRequest(
         X_train=df.drop(columns=["美味しさ"]),

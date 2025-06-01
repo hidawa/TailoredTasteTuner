@@ -1,0 +1,11 @@
+.big-navbar {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+    font-size: 1.5rem;
+    height: 80px;
+}
+
+.bg-coffee {
+    background-color: #4B3832 !important;
+    color: #F5E9E2 !important;
+}

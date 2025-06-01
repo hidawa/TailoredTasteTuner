@@ -1,22 +1,45 @@
 import dash
-from dash import html, dcc
+from dash import html, page_container
 import dash_bootstrap_components as dbc
+from src.navbar import navbar
+from src.sidebar import sidebar
+import os
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+app = dash.Dash(
+    __name__,
+    use_pages=True,
+    suppress_callback_exceptions=True,
+    external_stylesheets=[dbc.themes.SANDSTONE],
+    # external_scripts=["https://cdn.plot.ly/plotly-2.18.2.min.js"]
+)
 server = app.server
- 
+
 app.layout = dbc.Container(
     [
-        dbc.Row([
-            dbc.Col(html.Div("Data"), width=6),
-            dbc.Col(html.Div("Plot"), width=6),
-        ]),
-        # dbc.Row([
-        #     dbc.Col(dcc.Graph(id='example-graph-1'), width=6),
-        #     dbc.Col(dcc.Graph(id='example-graph-2'), width=6),
-        # ])
-    ]
+        navbar,
+        dbc.Row(
+            [
+                dbc.Col(sidebar, width=2),
+                dbc.Col(
+                    html.Div([
+                        # navbar,
+                        html.Hr(),
+                        html.Div(
+                            page_container,
+                            # className="p-4"
+                        ),
+                    ]),
+                    width=10,
+                ),
+            ],
+            # className="g-0"
+        ),
+    ],
+    fluid=True,
+    # className="bg-coffee",
 )
- 
-if __name__ == '__main__':
-    app.run(debug=None, port=8050)
+
+if __name__ == "__main__":
+    # port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=8080, debug=False)

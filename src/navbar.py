@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 coffee_color = "#4B3832"
 text_color = "#F8F1E7"
 
-navbar = dbc.Navbar( 
+navbar = dbc.Navbar(
     dbc.Container(
         [
             dbc.NavbarBrand(
@@ -17,15 +17,6 @@ navbar = dbc.Navbar(
                     # "marginRight": "1rem",
                 }
             ),
-            # dbc.NavbarBrand(
-            #     "Bayesian Blend Board",
-            #     style={
-            #         "fontSize": "1.2rem",
-            #         "color": text_color,
-            #         "fontStyle": "italic",
-            #         "alignSelf": "center",
-            #     }
-            # ),
         ],
     ),
     color=coffee_color,

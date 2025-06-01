@@ -4,11 +4,12 @@ import dash_ag_grid as dag
 from typing import Union
 import pandas as pd
 from src.model.return_candidates import CreateCandidates, CandidatesRequest
+from src.config import DATA_DIR
 
 register_page(__name__, path="/experiment")
 
 df = pd.read_csv(
-    "../data/input_test.csv",
+    DATA_DIR / "input_test.csv"
 )
 
 grid = dag.AgGrid(
@@ -101,7 +102,7 @@ def create_blend(n_clicks: int) -> Union[list, None]:
         ]
 
     df = pd.read_csv(
-        "../data/input_test.csv",
+        DATA_DIR / "input_test.csv"
     )
     request_data = CandidatesRequest(
         X_train=df.drop(columns=["美味しさ"]),

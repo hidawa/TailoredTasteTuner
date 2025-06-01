@@ -4,13 +4,17 @@ from dash import html, register_page, dcc, callback, Input, Output
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
+from src.config import DATA_DIR
+
+
 register_page(__name__, path="/analysis")  # type: ignore
 
+
 df_grid = pd.read_csv(
-    "../data/grid_predict.csv"
+    DATA_DIR / "grid_predict.csv"
 )
 df_actual = pd.read_csv(
-    "../data/input_test.csv"
+    DATA_DIR / "input_test.csv"
 )
 actual_col = "美味しさ"
 
@@ -131,8 +135,8 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
     # 上下限
     fig.add_trace(go.Surface(
         z=reshape_surface(df_plot, x_i_col, x_j_col, "upper"),
-        x=x_mesh,  # x_i_grid.cpu().numpy(),
-        y=y_mesh,  # x_j_grid.cpu().numpy(),
+        x=x_mesh,
+        y=y_mesh,
         opacity=0.6,
         colorscale='Reds',
         autocolorscale=False,
@@ -142,8 +146,8 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
 
     fig.add_trace(go.Surface(
         z=reshape_surface(df_plot, x_i_col, x_j_col, "lower"),
-        x=x_mesh,  # x_i_grid.cpu().numpy(),
-        y=y_mesh,  # x_j_grid.cpu().numpy(),
+        x=x_mesh,
+        y=y_mesh,
         opacity=0.6,
         colorscale='Blues',
         autocolorscale=False,
@@ -194,7 +198,6 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
                 eye=dict(x=-2, y=-2, z=2)  # 手前から見る視点
             )
         ),
-        # template="plotly_white"
     )
 
     return fig

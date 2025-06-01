@@ -27,7 +27,7 @@ WORKDIR /app
 # Poetry 関連ファイルを先にコピーして依存解決
 COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root --no-interaction --no-ansi
-# TODO 20250601: dev 依存は Cloud Run では不要なので除外
+# TODO 20250601: dev 依存は Cloud Run では不要なので除外したい
 # RUN poetry install --without dev --no-root --no-interaction --no-ansi 
 
 # freezeしてrequirements.txtを生成（runtime用）
@@ -59,10 +59,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# builder からインストール済み環境をコピー
-# COPY --from=builder /usr/local/lib/python3.*/dist-packages /usr/local/lib/python3.*/dist-packages
-# COPY --from=builder /usr/local/bin /usr/local/bin
-# COPY --from=builder /app /app
 # builder から必要なファイルだけコピー
 COPY --from=builder /app/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
@@ -70,6 +66,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/data ./data
 
+# 📦 コピーされたか確認
+RUN ls -l /app/data
 
 # 実行ポート（Cloud Run 用）
 EXPOSE 8080

@@ -1,3 +1,4 @@
+from pathlib import Path
 import pandas as pd
 from pydantic import BaseModel, ConfigDict
 
@@ -11,6 +12,7 @@ from botorch.utils.transforms import unnormalize
 from botorch.models.transforms import Standardize
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.fit import fit_gpytorch_mll
+from src.config import DATA_DIR
 
 
 class CandidatesResponse(BaseModel):
@@ -111,7 +113,7 @@ class CreateCandidates:
 if __name__ == "__main__":
     # テスト用のリクエストデータ
     df = pd.read_csv(
-        "../data/input_test.csv"
+        DATA_DIR / "input_test.csv"
     )
     request_data = CandidatesRequest(
         X_train=df.drop(columns=["美味しさ"]),

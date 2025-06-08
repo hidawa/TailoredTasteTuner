@@ -1,14 +1,13 @@
-from pathlib import Path
 import pandas as pd
 from pydantic import BaseModel, ConfigDict
-
+import numpy as np
+from itertools import product
 from typing import List, Optional
 import torch
 from botorch.models import SingleTaskGP
-from botorch.acquisition import qExpectedImprovement
-from botorch.optim import optimize_acqf
+from botorch.acquisition import qExpectedImprovement, qNoisyExpectedImprovement
+from botorch.acquisition.objective import IdentityMCObjective
 from botorch.utils.transforms import normalize
-from botorch.utils.transforms import unnormalize
 from botorch.models.transforms import Standardize
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from botorch.fit import fit_gpytorch_mll
@@ -19,6 +18,7 @@ class CandidatesResponse(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     candidates: pd.DataFrame    # shape: [q, d]
     predictions: pd.DataFrame  # shape: [q, 1]
+    gp_model: SingleTaskGP        # 学習済みのGPモデル
     mean: List[float]                # shape: [q]
     variance: List[float]            # shape: [q]
 
@@ -41,7 +41,7 @@ class CreateCandidates:
             request.X_train.values, dtype=torch.float64, device=self.device)
         Y_train = torch.tensor(
             request.Y_train.values, dtype=torch.float64, device=self.device)
-        # 入力データをテンソルに変換
+        # === 1. boundsの決定 ===
         if request.bounds is None:
             bounds = torch.stack(
                 [
@@ -53,14 +53,12 @@ class CreateCandidates:
             bounds = torch.tensor(
                 request.bounds, dtype=torch.float64, device=self.device)
 
+        # === 2. 標準化（normalize to [0, 1]） ===
         X_train_normalized = normalize(
             X_train, bounds=bounds
         ).to(self.device)
 
-        standard_bounds = torch.zeros_like(bounds).to(self.device)
-        standard_bounds[1] = 1
-
-        # ガウス過程モデルの学習
+        # === 3. GPモデル学習 ===
         model = SingleTaskGP(
             X_train_normalized,
             Y_train,
@@ -69,42 +67,76 @@ class CreateCandidates:
         mll = ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_mll(mll)
 
-        # 最良値（ベイズ最適化に必要）
+        # === 4. 離散候補点（0.25刻み, 合計=1.0）を生成 ===
+        levels = [0.0, 0.25, 0.5, 0.75, 1.0]
+        candidate_list = [
+            list(p) for p in product(levels, repeat=X_train.shape[1])
+            if np.isclose(sum(p), 1.0)
+        ]
+        X_candidates_raw = torch.tensor(
+            candidate_list, dtype=torch.float64, device=self.device)
+
+        # === 4.5. 過去に試した点と一致する候補を除外 ===
+        use_existing = False
+        if use_existing:
+            pass
+        else:
+            existing = X_train.cpu().numpy()
+            mask = []
+            for x in X_candidates_raw.cpu().numpy():
+                is_duplicate = np.any([np.allclose(x, x0, atol=1e-6)
+                                       for x0 in existing])
+                mask.append(not is_duplicate)
+            X_candidates_raw = X_candidates_raw[mask]
+
+        # === 5. normalize candidates to [0,1] using same bounds ===
+        X_candidates_normalized = normalize(X_candidates_raw, bounds=bounds)
+
+        # === 6. qEI 計算 ===
         best_f = model.outcome_transform(Y_train)[0].max()
 
-        # Acquisition function
-        qEI = qExpectedImprovement(model=model, best_f=best_f)
+        use_noise = True
+        if use_noise is False:
+            acq = qExpectedImprovement(
+                model=model,
+                best_f=best_f,
+                objective=IdentityMCObjective(),
+            )
+        else:
+            # qNoisyExpectedImprovementは、ノイズを考慮したqEI
+            acq = qNoisyExpectedImprovement(
+                model=model,
+                X_baseline=X_train_normalized,
+            )
 
-        # 最適化
-        candidates, _ = optimize_acqf(
-            acq_function=qEI,
-            bounds=standard_bounds,
-            q=request.num_candidates,
-            num_restarts=10,
-            raw_samples=64,
-        )
+        with torch.no_grad():
+            ei_values = acq(X_candidates_normalized.unsqueeze(1)).squeeze(-1)
+
+        # === 7. 上位候補を選出 ===
+        topk = torch.topk(ei_values, k=request.num_candidates)
+        best_indices = topk.indices
+        best_raws = X_candidates_raw[best_indices]  # 非標準化
+        best_normalized = X_candidates_normalized[best_indices]
 
         # 予測値を取得
-        posterior = model.posterior(candidates)
-        if isinstance(posterior, tuple):
-            posterior = posterior[0]
+        posterior = model.posterior(best_normalized)
         mean = posterior.mean.squeeze(-1)
         variance = posterior.variance.squeeze(-1)
 
-        candidates = unnormalize(candidates.detach(), bounds=bounds)
-
+        # === 9. 出力用 DataFrame ===
         candidates_df = pd.DataFrame(
-            candidates.cpu().numpy(),
+            best_raws.cpu().numpy(),
             columns=request.X_train.columns
         )
         predictions_df = pd.DataFrame(
-            mean.cpu().detach().numpy(),
+            mean.cpu().detach().numpy().reshape(-1, 1),
             columns=["美味しさ"]
         )
 
         return CandidatesResponse(
             candidates=candidates_df,
             predictions=predictions_df,
+            gp_model=model,
             mean=mean.cpu().tolist(),
             variance=variance.cpu().tolist()
         )
@@ -115,11 +147,24 @@ if __name__ == "__main__":
     df = pd.read_csv(
         DATA_DIR / "input_test.csv"
     )
+    list_target_col = ["美味しさ"]
+    bounds = [
+        [
+            0.0 for _ in range(
+                df.drop(columns=list_target_col).shape[1]
+            )
+        ],
+        [
+            1.0 for _ in range(
+                df.drop(columns=list_target_col).shape[1]
+            )
+        ]
+    ]
     request_data = CandidatesRequest(
-        X_train=df.drop(columns=["美味しさ"]),
-        Y_train=df[["美味しさ"]],
+        X_train=df.drop(columns=list_target_col),
+        Y_train=df[list_target_col],
         num_candidates=2,
-        bounds=None
+        bounds=bounds
     )
 
     create_candidates = CreateCandidates()

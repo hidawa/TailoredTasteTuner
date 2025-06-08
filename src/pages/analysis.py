@@ -1,6 +1,5 @@
 import pandas as pd
 from dash import html, register_page, dcc, callback, Input, Output
-# import dash_chart_editor as dce
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
@@ -39,7 +38,7 @@ slider_components = []
 for col in feature_cols:
     col_min = int(df_grid[col].min())
     col_max = int(df_grid[col].max())
-    step = 10
+    step = 0.25
     slider_components.append(
         html.Div([
             html.Label(f"{col}", className="fw-bold"),
@@ -49,7 +48,7 @@ for col in feature_cols:
                 max=col_max,
                 step=step,
                 value=[col_min, col_max],  # ←初期状態：すべて含む
-                marks={i: str(i) for i in range(col_min, col_max + 1, step)},
+                marks={i: str(i) for i in [0, 0.25, 0.5, 0.75, 1.0]},
                 tooltip={"placement": "bottom", "always_visible": True}
             )
         ],
@@ -81,7 +80,6 @@ layout = html.Div([
             width=8
         ),
     ]),
-    # dce.DashChartEditor(dataSources=df_grid.to_dict("list")),
 ])
 
 

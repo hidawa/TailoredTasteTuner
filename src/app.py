@@ -3,7 +3,6 @@ from dash import html, page_container
 import dash_bootstrap_components as dbc
 from src.navbar import navbar
 from src.sidebar import sidebar
-import os
 
 
 app = dash.Dash(

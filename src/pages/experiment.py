@@ -8,31 +8,49 @@ from src.config import DATA_DIR
 
 register_page(__name__, path="/experiment")
 
-df = pd.read_csv(
-    DATA_DIR / "input_test.csv"
-)
 
-grid = dag.AgGrid(
-    id="grid-callback-candidates",
-    dashGridOptions={
-        "rowSelection": "multiple",
-        "suppressRowClickSelection": True,
-        "animateRows": False
-    },
-    columnDefs=[
-        {"field": x, } for x in df.columns
-    ] + [
-        {
-            "headerName": "試してみる",   # チェックボックスの列
-            "checkboxSelection": True,
-            "headerCheckboxSelection": True,
-            # "width": 50
-        }
-    ],
-    rowData=[],
-)
+def create_candidate_blocks(df_candidates):
+    blocks = []
 
-del df
+    for idx, row in df_candidates.iterrows():
+        blend_id = idx + 1
+        score = row["美味しさ"]
+
+        header_row = dbc.Row(
+            [
+                dbc.Col(
+                    html.H5(f"候補 {blend_id}：美味しさ {score:.2f}"), width="auto"),
+                dbc.Col(
+                    dbc.Button(
+                        "試してみる",
+                        id={"type": "try-button", "index": blend_id},
+                        color="success",
+                        className="ms-3"
+                    ),
+                    width="auto"
+                ),
+            ],
+            align="center",
+            className="mb-2"
+        )
+
+        # 材料のカラムだけ抽出（例: ["マンデリン", "グアテマラ", ...]）
+        ingredients = row.drop("美味しさ").to_dict()
+        row_data = [{"材料名": k, "分量": v} for k, v in ingredients.items()]
+
+        grid = dag.AgGrid(
+            columnDefs=[
+                {"field": "材料名", "headerName": "材料名"},
+                {"field": "分量", "headerName": "分量"},
+            ],
+            rowData=row_data,
+            dashGridOptions={"domLayout": "autoHeight"},
+            style={"width": "100%"},
+        )
+        block = html.Div([header_row, grid], className="mb-4")
+        blocks.append(block)
+
+    return blocks
 
 
 layout = html.Div([
@@ -69,7 +87,13 @@ def update_tab_content(active_tab: str) -> Union[html.Div, None]:
                 id="create-blend-button",
                 className="btn btn-primary mb-3"
             ),
-            dcc.Loading(grid),
+            dcc.Loading(
+                id="loading-candidates",
+                type="circle",
+                children=html.Div(
+                    id="candidate-blocks"
+                ),
+            ),
             html.Button(
                 "チェックしたブレンドを保存",
                 id="save-blend-button",
@@ -92,13 +116,16 @@ def update_tab_content(active_tab: str) -> Union[html.Div, None]:
 
 
 @callback(
-    Output("grid-callback-candidates", "rowData", allow_duplicate=True),
+    Output("candidate-blocks", "children"),
     Input("create-blend-button", "n_clicks"),
-    prevent_initial_call=True
+    prevent_initial_call=False
 )
 def create_blend(n_clicks: int) -> Union[list, None]:
     if n_clicks is None:
         return [
+            html.P(
+                "ブレンドを作成するにはボタンをクリックしてください。"
+            )
         ]
 
     df = pd.read_csv(
@@ -120,6 +147,5 @@ def create_blend(n_clicks: int) -> Union[list, None]:
         ],
         axis=1
     )
-    new_blend_data = df_output.to_dict("records")
 
-    return new_blend_data
+    return create_candidate_blocks(df_output)

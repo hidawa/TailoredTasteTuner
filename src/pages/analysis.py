@@ -4,40 +4,32 @@ import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
 from src.config import DATA_DIR
+from src.model.create_gridded_prediction_data import GriddedPredictionDataRequest, CreateGriddedPredictionData
 
 
 register_page(__name__, path="/analysis")  # type: ignore
 
 
-df_grid = pd.read_csv(
-    DATA_DIR / "grid_predict.csv"
-)
 df_actual = pd.read_csv(
     DATA_DIR / "input_test.csv"
 )
-actual_col = "美味しさ"
+list_target_col = ["美味しさ"]
 
-# スライダーにする対象の特徴量（x, y, z軸以外）
-predict_cols = [
-    "mean",
-    "std",
-    "upper",
-    "lower",
-]
-feature_cols = [col for col in df_grid.columns if col not in predict_cols]
+feature_cols = [col for col in df_actual.columns if col not in list_target_col]
 
 # 初期値設定
 default_x_i = feature_cols[0]
 default_x_j = feature_cols[1]
 
 dropdown_options = [{"label": col, "value": col}
-                    for col in df_grid.columns if col not in predict_cols]
+                    for col in df_actual.columns if col not in list_target_col]
 
 # === スライダー生成 ===
 slider_components = []
 for col in feature_cols:
-    col_min = int(df_grid[col].min())
-    col_max = int(df_grid[col].max())
+    # TODO: 20250613 boundsから取得する
+    col_min = 0  # int(df_actual[col].min())
+    col_max = 1  # int(df_actual[col].max())
     step = 0.25
     slider_components.append(
         html.Div([
@@ -59,27 +51,21 @@ layout = html.Div([
     html.H2(
         "📊 モデル結果",
     ),
-    html.P(
-        "実験結果を表やグラフで表示します。",
-    ),
-    dbc.Row([
-        dbc.Col([
-            html.Label("X軸:"),
-            dcc.Dropdown(id="x-i-col", options=[{"label": c, "value": c}
-                         for c in feature_cols], value=default_x_i),
-            html.Label("Y軸:"),
-            dcc.Dropdown(id="x-j-col", options=[{"label": c, "value": c}
-                         for c in feature_cols], value=default_x_j),
-            html.Hr(),
-            html.Div(slider_components)
-        ], width=4),
-        dbc.Col(
-            dcc.Graph(
-                id="surface-plot",
-            ),
-            width=8
+    dbc.Col([
+        html.Label("X軸:"),
+        dcc.Dropdown(id="x-i-col", options=[{"label": c, "value": c}
+                                            for c in feature_cols], value=default_x_i),
+        html.Label("Y軸:"),
+        dcc.Dropdown(id="x-j-col", options=[{"label": c, "value": c}
+                                            for c in feature_cols], value=default_x_j),
+        html.Hr(),
+        html.Div(slider_components)
+    ],),
+    dbc.Col(
+        dcc.Graph(
+            id="surface-plot",
         ),
-    ]),
+    ),
 ])
 
 
@@ -96,7 +82,29 @@ layout = html.Div([
 )
 def update_surface(x_i_col, x_j_col, *slider_ranges):
     # スライダー範囲でフィルタリング
-    df_filtered = df_grid.copy()
+    actual_col = list_target_col[0]  # 実際の値の列名
+    bounds = [
+        [
+            0 for _ in range(
+                df_actual.drop(columns=list_target_col).shape[1]
+            )
+        ],
+        [
+            1 for _ in range(
+                df_actual.drop(columns=list_target_col).shape[1]
+            )
+        ]
+    ]
+    gredded_request = GriddedPredictionDataRequest(
+        X_train=df_actual.drop(columns=list_target_col),
+        Y_train=df_actual[list_target_col],
+        bounds=bounds,  # ここは適宜設定
+        gridded_levels=[round(x, 2) for x in np.arange(0, 1.01, 0.05)]
+    )
+    create_gridded_prediction_data = CreateGriddedPredictionData()
+    gridded_response = create_gridded_prediction_data(gredded_request)
+
+    df_filtered = gridded_response.df_gridded.copy()
     for col, (vmin, vmax) in zip(feature_cols, slider_ranges):
         if col in [x_i_col, x_j_col]:
             continue
@@ -113,17 +121,13 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
     ).mean()
     print(df_plot)
 
-    # meshgridの準備
-    x_vals = np.sort(df_plot[x_i_col].unique())
-    y_vals = np.sort(df_plot[x_j_col].unique())
-    x_mesh, y_mesh = np.meshgrid(x_vals, y_vals, indexing='ij')
-
     fig = go.Figure()
     # GP平均
+    mean_x, mean_y, mean_z = reshape_surface(df_plot, x_i_col, x_j_col, "mean")
     fig.add_trace(go.Surface(
-        z=reshape_surface(df_plot, x_i_col, x_j_col, "mean"),
-        x=x_mesh,
-        y=y_mesh,
+        z=mean_z,
+        x=mean_x,
+        y=mean_y,
         colorscale='Rdbu',
         reversescale=True,
         opacity=0.3,
@@ -131,10 +135,12 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
     ))
 
     # 上下限
+    upper_x, upper_y, upper_z = reshape_surface(
+        df_plot, x_i_col, x_j_col, "upper")
     fig.add_trace(go.Surface(
-        z=reshape_surface(df_plot, x_i_col, x_j_col, "upper"),
-        x=x_mesh,
-        y=y_mesh,
+        z=upper_z,
+        x=upper_x,
+        y=upper_y,
         opacity=0.6,
         colorscale='Reds',
         autocolorscale=False,
@@ -142,10 +148,12 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
         showscale=False
     ))
 
+    lower_x, lower_y, lower_z = reshape_surface(
+        df_plot, x_i_col, x_j_col, "lower")
     fig.add_trace(go.Surface(
-        z=reshape_surface(df_plot, x_i_col, x_j_col, "lower"),
-        x=x_mesh,
-        y=y_mesh,
+        z=lower_z,
+        x=lower_x,
+        y=lower_y,
         opacity=0.6,
         colorscale='Blues',
         autocolorscale=False,
@@ -202,9 +210,13 @@ def update_surface(x_i_col, x_j_col, *slider_ranges):
 
 
 def reshape_surface(df, x_i_col_name, x_j_col_name, z_col_name):
-    z = df.pivot(
-        index=x_i_col_name,
-        columns=x_j_col_name,
+    df_pivot = df.pivot(
+        index=x_j_col_name,
+        columns=x_i_col_name,
         values=z_col_name
-    ).values
-    return z
+    )
+    x = np.sort(df_pivot.columns.to_numpy())  # 横軸
+    y = np.sort(df_pivot.index.to_numpy())    # 縦軸
+    z = df_pivot.loc[y, x].values             # ソートされた順に z を取得
+
+    return x, y, z

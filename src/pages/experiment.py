@@ -55,7 +55,7 @@ def create_candidate_blocks(df_candidates):
 
 layout = html.Div([
     html.H2(
-        "🧪 コーヒーブレンド実験",
+        "🧪 ブレンド実験",
         # className="text-light mb-4"
     ),
     dbc.Tabs(

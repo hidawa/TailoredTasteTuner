@@ -27,7 +27,7 @@ navbar = dbc.Navbar(
                 ),
                 dbc.Col(
                     dbc.NavbarBrand(
-                        "🍽️ Tailored Taste Tuner",
+                        "Tailored Taste Tuner",
                         href="/",
                         style={
                             "fontSize": "1.5rem",

@@ -3,6 +3,20 @@ import dash_bootstrap_components as dbc
 coffee_color = "#4B3832"
 text_color = "#F8F1E7"
 
+nav_items = [
+    ("🏠 ホーム", "/"),
+    ("🧪 次の実験", "/experiment"),
+    ("🛠️ 評価・履歴", "/evaluation"),
+    ("📊 分析", "/analysis"),
+    ("⚙️ 設定", "/settings"),
+]
+
+nav_links = [
+    dbc.NavLink(label, href=href, active="exact",
+                id={"type": "nav-link", "index": i})
+    for i, (label, href) in enumerate(nav_items)
+]
+
 navbar = dbc.Navbar(
     dbc.Container([
         dbc.Row(
@@ -31,14 +45,7 @@ navbar = dbc.Navbar(
         ),
         dbc.Collapse(
             dbc.Nav(
-                [
-                    dbc.NavLink("🏠 ホーム", href="/", active="exact"),
-                    dbc.NavLink("🧪 次の実験", href="/experiment", active="exact"),
-                    dbc.NavLink("🛠️ 評価・履歴", href="/evaluation",
-                                active="exact"),
-                    dbc.NavLink("📊 分析", href="/analysis", active="exact"),
-                    dbc.NavLink("⚙️ 設定", href="/settings", active="exact"),
-                ],
+                nav_links,
                 className="ms-auto",
                 navbar=True,
             ),
@@ -51,6 +58,7 @@ navbar = dbc.Navbar(
     color=coffee_color,
     dark=True,
     expand="lg",
+    sticky="top",
     className="w-100 p-0 m-0",
     style={"margin": "0", "padding": "0"},
 )

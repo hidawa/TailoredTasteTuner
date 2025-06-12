@@ -1,5 +1,5 @@
 import dash
-from dash import html, page_container, Input, Output, State
+from dash import html, page_container, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from src.navbar import navbar
 
@@ -29,12 +29,17 @@ app.layout = html.Div(
 @app.callback(
     Output("navbar-collapse", "is_open"),
     Input("navbar-toggler", "n_clicks"),
+    Input({"type": "nav-link", "index": ALL}, "n_clicks"),
     State("navbar-collapse", "is_open"),
+    prevent_initial_call=True,
 )
-def toggle_navbar(n, is_open):
-    if n:
+def toggle_navbar(toggler_clicks, navlink_clicks, is_open):
+    if toggler_clicks:
         return not is_open
-    return is_open
+    if navlink_clicks:
+        return False
+    else:
+        return is_open
 
 
 if __name__ == "__main__":

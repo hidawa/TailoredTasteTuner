@@ -212,8 +212,6 @@ def submit_rating(n_clicks, rating, row_data):
         f"Rating submitted: {rating}, Row data: {row_data}"
     )
     record = InsertRecordData(
-        dataset_id=BQ_DATASET_ID,
-        table_id=BQ_TABLE_ID,
         user_id=SAMPLE_USER_ID,
         timestamp=datetime.now().isoformat(),
         experiment_type=SAMPLE_EXPERIMENT_TYPE,
@@ -221,7 +219,11 @@ def submit_rating(n_clicks, rating, row_data):
         ingredients=row_data  # これは [{'材料名': '〜', '分量': x}, ...] の形式
     )
 
-    insert_record_to_bigquery(record)
+    insert_record_to_bigquery(
+        record,
+        dataset_id=BQ_DATASET_ID,
+        table_id=BQ_TABLE_ID
+    )
 
     return_candidate_block = [
         html.Div(

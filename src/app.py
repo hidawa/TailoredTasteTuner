@@ -1,8 +1,7 @@
 import dash
-from dash import html, page_container
+from dash import html, page_container, Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from src.navbar import navbar
-from src.sidebar import sidebar
 
 
 app = dash.Dash(
@@ -10,35 +9,38 @@ app = dash.Dash(
     use_pages=True,
     suppress_callback_exceptions=True,
     external_stylesheets=[dbc.themes.SANDSTONE],
-    # external_scripts=["https://cdn.plot.ly/plotly-2.18.2.min.js"]
 )
 server = app.server
 
-app.layout = dbc.Container(
+app.layout = html.Div(
     [
         navbar,
-        dbc.Row(
+        dbc.Container(
             [
-                dbc.Col(sidebar, width=2),
-                dbc.Col(
-                    html.Div([
-                        # navbar,
-                        html.Hr(),
-                        html.Div(
-                            page_container,
-                            # className="p-4"
-                        ),
-                    ]),
-                    width=10,
-                ),
+                html.Hr(),
+                html.Div(page_container),
             ],
-            # className="g-0"
-        ),
-    ],
-    fluid=True,
-    # className="bg-coffee",
+            fluid=True,
+        )
+    ]
 )
 
+
+@app.callback(
+    Output("navbar-collapse", "is_open"),
+    Input("navbar-toggler", "n_clicks"),
+    Input({"type": "nav-link", "index": ALL}, "n_clicks"),
+    State("navbar-collapse", "is_open"),
+    prevent_initial_call=True,
+)
+def toggle_navbar(toggler_clicks, navlink_clicks, is_open):
+    if toggler_clicks:
+        return not is_open
+    if navlink_clicks:
+        return False
+    else:
+        return is_open
+
+
 if __name__ == "__main__":
-    # port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=8080, debug=False)

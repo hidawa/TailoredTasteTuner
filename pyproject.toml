@@ -18,7 +18,9 @@ dependencies = [
     "optuna-integration (>=4.3.0,<5.0.0)",
     "dash-ag-grid (>=31.3.1,<32.0.0)",
     "pydantic (>=2.11.5,<3.0.0)",
-    "gunicorn (>=23.0.0,<24.0.0)"
+    "gunicorn (>=23.0.0,<24.0.0)",
+    "bigquery (>=0.0.45,<0.0.46)",
+    "google-cloud-bigquery[pandas] (>=3.34.0,<4.0.0)"
 ]
 
 

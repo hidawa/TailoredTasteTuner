@@ -5,7 +5,7 @@ from itertools import product
 from typing import List, Optional
 import torch
 from botorch.models import SingleTaskGP
-from botorch.acquisition import qExpectedImprovement, qNoisyExpectedImprovement
+from botorch.acquisition import qLogExpectedImprovement, qLogNoisyExpectedImprovement, LogExpectedImprovement
 from botorch.acquisition.objective import IdentityMCObjective
 from botorch.utils.transforms import normalize
 from botorch.models.transforms import Standardize
@@ -95,19 +95,23 @@ class CreateCandidates:
         # === 6. qEI 計算 ===
         best_f = model.outcome_transform(Y_train)[0].max()
 
-        use_noise = True
-        if use_noise is False:
-            acq = qExpectedImprovement(
-                model=model,
-                best_f=best_f,
-                objective=IdentityMCObjective(),
-            )
-        else:
-            # qNoisyExpectedImprovementは、ノイズを考慮したqEI
-            acq = qNoisyExpectedImprovement(
-                model=model,
-                X_baseline=X_train_normalized,
-            )
+        acquisition_function_name = "LogExpectedImprovement"
+        dict_acquisition_functions = {}
+        dict_acquisition_functions["qLogExpectedImprovement"] = qLogExpectedImprovement(
+            model=model,
+            best_f=best_f,
+            objective=IdentityMCObjective()
+        )
+        dict_acquisition_functions["qLogNoisyExpectedImprovement"] = qLogNoisyExpectedImprovement(
+            model=model,
+            X_baseline=X_train_normalized,
+        )
+        dict_acquisition_functions["LogExpectedImprovement"] = LogExpectedImprovement(
+            model=model,
+            best_f=best_f,
+        )
+
+        acq = dict_acquisition_functions[acquisition_function_name]
 
         with torch.no_grad():
             ei_values = acq(X_candidates_normalized.unsqueeze(1)).squeeze(-1)
